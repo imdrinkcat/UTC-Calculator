@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>UTC累计秒计算器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        label {
+            display: block;
+            margin: 20px 0 10px;
+        }
+        input[type="date"], input[type="time"] {
+            width: calc(100% - 40px);
+            max-width: 500px;
+            padding: 12px; /* 增加内边距 */
+            margin: 10px auto; /* 增加外边距 */
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box; /* 确保内边距不会增加元素宽度 */
+            -webkit-appearance: none; /* 去除 Safari 默认样式 */
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        h2 {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <h1>UTC累计秒计算器</h1>
+    <label for="start-date">UTC起点日期：</label>
+    <input type="date" id="start-date" value="2009-01-01" required><br>
+    <label for="start-time">UTC起点时间：</label>
+    <input type="time" step="1" id="start-time" value="00:00:00" required><br>
+    <label for="input-date">输入日期（北京时间 UTC+08）：</label>
+    <input type="date" id="input-date" required><br>
+    <label for="input-time">输入时间（北京时间 UTC+08）：</label>
+    <input type="time" step="1" id="input-time" required><br>
+    <button onclick="calculateUTCTotalSeconds()">计算UTC累计秒</button>
+    <h2 id="result"></h2>
+
+    <script>
+        function calculateUTCTotalSeconds() {
+            // 获取输入的UTC起点日期和时间
+            const startDateTime = document.getElementById('start-date').value + 'T' + document.getElementById('start-time').value + 'Z';
+            const startDate = new Date(startDateTime);
+
+            // 获取输入的日期和时间
+            const inputDateTime = document.getElementById('input-date').value + 'T' + document.getElementById('input-time').value + 'Z';
+            const inputDate = new Date(inputDateTime);
+            
+            const utcOffset = 8 * 60 * 60 * 1000;
+            const adjustedInputDate = new Date(inputDate.getTime() - utcOffset);
+
+            // 计算两个日期之间的时间差（以毫秒为单位）
+            const timeDifference = adjustedInputDate - startDate;
+
+            // 将时间差转换为秒
+            const totalSeconds = Math.floor(timeDifference / 1000);
+
+            // 显示结果
+            document.getElementById('result').innerText = 'UTC累计秒：' + totalSeconds + ' 秒';
+        }
+    </script>
+</body>
+</html>
