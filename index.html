@@ -1,97 +1,93 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <title>UTC累计秒计算器</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            color: #333;
-            text-align: center;
-            padding: 20px;
-        }
-        h1 {
-            color: #4CAF50;
-        }
-        label {
-            display: block;
-            margin: 20px 0 10px;
-        }
-        input[type="text"] {
-            width: calc(100% - 40px);
-            max-width: 500px;
-            padding: 12px;
-            margin: 10px auto;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        h2 {
-            margin-top: 20px;
-            font-size: 18px;
-        }
-    </style>
+<meta charset="utf-8" />
+<title>UTC累计秒计算器（修正时区解释）</title>
+<style>
+  body { font-family: Arial, sans-serif; background:#f4f4f9; color:#333; padding:20px; text-align:center;}
+  h1 { color:#4CAF50; }
+  label { display:block; margin:14px 0 6px; }
+  input[type="text"] { width: calc(100% - 40px); max-width:500px; padding:10px; font-size:16px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box; margin:6px auto;}
+  .radios { display:flex; justify-content:center; gap:16px; margin-top:8px; }
+  button { background:#4CAF50; color:white; border:none; padding:10px 18px; font-size:16px; border-radius:6px; cursor:pointer; margin-top:16px;}
+  button:hover{ background:#45a049;}
+  #result{ margin-top:18px; font-size:18px; }
+  .note{ font-size:13px; color:#666; margin-top:8px; }
+</style>
 </head>
 <body>
-    <h1>UTC累计秒计算器</h1>
+  <h1>UTC累计秒计算器（修正时区解释）</h1>
 
-    <label for="start-datetime">UTC起点时间（格式：YYYY-MM-DD HH:mm:ss）：</label>
-    <input type="text" id="start-datetime" value="2009-01-01 00:00:00" required><br>
+  <label>UTC起点时间（格式：YYYY-MM-DD HH:mm:ss）：</label>
+  <input type="text" id="start-dt" value="2009-01-01 00:00:00">
 
-    <label for="input-datetime">输入时间（北京时间 UTC+08，格式：YYYY-MM-DD HH:mm:ss）：</label>
-    <input type="text" id="input-datetime" required><br>
+  <div class="radios">
+    <label><input type="radio" name="startTz" value="UTC" checked> 起点为 UTC</label>
+    <label><input type="radio" name="startTz" value="CST"> 起点为 北京时间 (UTC+8)</label>
+  </div>
 
-    <button onclick="calculateUTCTotalSeconds()">计算UTC累计秒</button>
-    <h2 id="result"></h2>
+  <label style="margin-top:14px;">输入时间（格式：YYYY-MM-DD HH:mm:ss，默认为北京时间 UTC+8）：</label>
+  <input type="text" id="input-dt" value="2009-01-01 00:00:00">
 
-    <script>
-        function parseDateTime(input) {
-            // 格式：YYYY-MM-DD HH:mm:ss
-            const parts = input.trim().split(' ');
-            if (parts.length !== 2) return null;
-            const datePart = parts[0];
-            const timePart = parts[1];
-            const dateTimeString = `${datePart}T${timePart}Z`; // 转换为 UTC 格式
-            const date = new Date(dateTimeString);
-            return isNaN(date.getTime()) ? null : date;
-        }
+  <button onclick="calculate()">计算UTC累计秒</button>
 
-        function calculateUTCTotalSeconds() {
-            const startInput = document.getElementById('start-datetime').value;
-            const inputDate = document.getElementById('input-datetime').value;
+  <div id="result"></div>
+  <div class="note">
+    说明：<br>
+    • 当“起点为 UTC”且“输入时间为北京时间（UTC+8）”时，两个相同的字符串会相差 -28800 秒（因为北京时间比 UTC 晚 8 小时）。<br>
+    • 若你想让“相同字符串 = 0 秒”，请选择“起点为 北京时间 (UTC+8)”。
+  </div>
 
-            const startDate = parseDateTime(startInput);
-            const inputLocalDate = parseDateTime(inputDate);
+<script>
+  // 手工解析 YYYY-MM-DD HH:mm:ss，返回 {ok:bool, utcMs:number}
+  function parseYYYYMMDD_hhmmss_as_utcMillis(s) {
+    // 允许额外空白
+    const str = (s || '').trim();
+    const m = str.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/);
+    if (!m) return { ok: false, msg: '格式应为 YYYY-MM-DD HH:mm:ss' };
+    const y = Number(m[1]), mo = Number(m[2]) - 1, d = Number(m[3]);
+    const hh = Number(m[4]), mm = Number(m[5]), ss = Number(m[6] || '0');
+    // 使用 Date.UTC 生成对应的 UTC 毫秒数
+    const ms = Date.UTC(y, mo, d, hh, mm, ss);
+    if (isNaN(ms)) return { ok: false, msg: '无法解析日期' };
+    return { ok: true, utcMs: ms };
+  }
 
-            if (!startDate || !inputLocalDate) {
-                document.getElementById('result').innerText = '❌ 输入格式错误，请使用 YYYY-MM-DD HH:mm:ss';
-                return;
-            }
+  function calculate() {
+    const startStr = document.getElementById('start-dt').value;
+    const inputStr = document.getElementById('input-dt').value;
+    const startTz = document.querySelector('input[name="startTz"]:checked').value; // "UTC" or "CST"
 
-            // 将北京时间 (UTC+8) 转为 UTC
-            const utcOffset = 8 * 60 * 60 * 1000;
-            const adjustedInputDate = new Date(inputLocalDate.getTime() - utcOffset);
+    // 解析起点字符串（用户输入）
+    const parsedStart = parseYYYYMMDD_hhmmss_as_utcMillis(startStr);
+    if (!parsedStart.ok) { document.getElementById('result').innerText = '起点解析错误：' + parsedStart.msg; return; }
 
-            const timeDifference = adjustedInputDate - startDate;
-            const totalSeconds = Math.floor(timeDifference / 1000);
+    // 解析输入字符串（页面约定：用户输入的是北京时间）
+    const parsedInput = parseYYYYMMDD_hhmmss_as_utcMillis(inputStr);
+    if (!parsedInput.ok) { document.getElementById('result').innerText = '输入时间解析错误：' + parsedInput.msg; return; }
 
-            document.getElementById('result').innerText = '✅ UTC累计秒：' + totalSeconds + ' 秒';
-        }
-    </script>
+    // 解析后的 utcMs 是“把该字符串当作对应时刻的 UTC 时间得到的毫秒数”。
+    // 因为我们有两种语义，分别调整：
+    // - 若起点标为 UTC： parsedStart.utcMs 已是正确的 UTC 毫秒
+    // - 若起点标为 北京时间： 起点实际对应 UTC，应减去 8 小时
+    let startUtcMs = parsedStart.utcMs;
+    if (startTz === 'CST') {
+      startUtcMs = parsedStart.utcMs - (8 * 3600 * 1000);
+    }
+
+    // 页面约定：输入时间是“北京时间(UTC+8)”，因此将其转换为 UTC：减去 8 小时
+    const inputUtcMs = parsedInput.utcMs - (8 * 3600 * 1000);
+
+    const diffSec = Math.floor((inputUtcMs - startUtcMs) / 1000);
+
+    // 为便于理解，同时显示两端对应的 UTC 时间
+    const startUtcIso = new Date(startUtcMs).toISOString().replace('T', ' ').replace('Z',' UTC');
+    const inputUtcIso = new Date(inputUtcMs).toISOString().replace('T', ' ').replace('Z',' UTC');
+
+    document.getElementById('result').innerHTML =
+      `<strong>UTC累计秒：</strong> ${diffSec} 秒<br>
+       <small>（起点对应 UTC：${startUtcIso}，输入对应 UTC：${inputUtcIso}）</small>`;
+  }
+</script>
 </body>
 </html>
